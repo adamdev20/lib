@@ -1,10 +1,15 @@
 local UILib = {}
 
--- Fungsi untuk membuat frame utama
+-- Fungsi untuk membuat window utama dengan fitur minimalkan dan drag
 function UILib:CreateWindow(title)
     local ScreenGui = Instance.new("ScreenGui")
     local MainFrame = Instance.new("Frame")
     local TitleLabel = Instance.new("TextLabel")
+    local MinimizeButton = Instance.new("TextButton")
+    local isMinimized = false  -- Variabel untuk status minimalkan
+    local isDragging = false  -- Untuk mengecek status dragging
+    local dragStart = nil
+    local startPos = nil
 
     -- Properti ScreenGui
     ScreenGui.Name = "UILibScreenGui"
@@ -17,7 +22,6 @@ function UILib:CreateWindow(title)
     MainFrame.Size = UDim2.new(0, 300, 0, 400)
     MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
     MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
-    MainFrame.ClipsDescendants = true
 
     -- Properti TitleLabel
     TitleLabel.Name = "TitleLabel"
@@ -29,50 +33,44 @@ function UILib:CreateWindow(title)
     TitleLabel.Font = Enum.Font.SourceSans
     TitleLabel.TextSize = 20
 
-    return MainFrame
-end
-
--- Fungsi untuk membuat tombol *On/Off*
-function UILib:CreateToggle(parent, text, default, callback)
-    local ToggleFrame = Instance.new("Frame")
-    local ToggleButton = Instance.new("TextButton")
-    local ToggleLabel = Instance.new("TextLabel")
-    local isOn = default or false
-
-    -- Properti ToggleFrame
-    ToggleFrame.Parent = parent
-    ToggleFrame.Size = UDim2.new(1, -10, 0, 30)
-    ToggleFrame.Position = UDim2.new(0, 5, 0, #parent:GetChildren() * 40)
-    ToggleFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-
-    -- Properti ToggleLabel
-    ToggleLabel.Parent = ToggleFrame
-    ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
-    ToggleLabel.Text = text or "Toggle"
-    ToggleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleLabel.BackgroundTransparency = 1
-    ToggleLabel.Font = Enum.Font.SourceSans
-    ToggleLabel.TextSize = 18
-
-    -- Properti ToggleButton
-    ToggleButton.Parent = ToggleFrame
-    ToggleButton.Size = UDim2.new(0.3, 0, 1, 0)
-    ToggleButton.Position = UDim2.new(0.7, 0, 0, 0)
-    ToggleButton.Text = isOn and "On" or "Off"
-    ToggleButton.BackgroundColor3 = isOn and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
-    ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    ToggleButton.Font = Enum.Font.SourceSans
-    ToggleButton.TextSize = 18
-
-    -- Interaksi toggle
-    ToggleButton.MouseButton1Click:Connect(function()
-        isOn = not isOn
-        ToggleButton.Text = isOn and "On" or "Off"
-        ToggleButton.BackgroundColor3 = isOn and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
-        if callback then
-            callback(isOn)
+    -- Properti MinimizeButton
+    MinimizeButton.Name = "MinimizeButton"
+    MinimizeButton.Parent = MainFrame
+    MinimizeButton.Text = "-"
+    MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
+    MinimizeButton.Position = UDim2.new(1, -30, 0, 0)
+    MinimizeButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    
+    -- Fungsi untuk mengubah status minimalkan
+    MinimizeButton.MouseButton1Click:Connect(function()
+        isMinimized = not isMinimized
+        if isMinimized then
+            MainFrame.Size = UDim2.new(0, 300, 0, 30)  -- Ubah ukuran menjadi minimal
+        else
+            MainFrame.Size = UDim2.new(0, 300, 0, 400)  -- Kembalikan ukuran asli
         end
     end)
+
+    -- Fitur Drag untuk geser-geser window
+    TitleLabel.MouseButton1Down:Connect(function(input)
+        isDragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+    end)
+
+    TitleLabel.MouseMoved:Connect(function(input)
+        if isDragging then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    TitleLabel.MouseButton1Up:Connect(function()
+        isDragging = false
+    end)
+
+    return MainFrame
 end
 
 return UILib
